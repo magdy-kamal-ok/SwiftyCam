@@ -41,6 +41,8 @@ public protocol SwiftyCamButtonDelegate: class {
     /// Sets the maximum duration of the video recording
     
     func setMaxiumVideoDuration() -> Double
+    
+    func didChangeLocation(y: CGFloat)
 }
 
 // MARK: Public View Declaration
@@ -71,7 +73,8 @@ open class SwiftyCamButton: UIButton {
     
     /// Initialization Declaration
 
-    
+    var initialCenter: CGPoint?
+
     required public init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         createGestureRecognizers()
@@ -88,16 +91,37 @@ open class SwiftyCamButton: UIButton {
     }
     
     /// UILongPressGestureRecognizer Function
-    @objc fileprivate func LongPress(_ sender:UILongPressGestureRecognizer!)  {
+    @objc fileprivate func LongPress(_ gesture:UILongPressGestureRecognizer!)  {
         guard buttonEnabled == true else {
             return
         }
         
-        switch sender.state {
+        switch gesture.state {
         case .began:
             delegate?.buttonDidBeginLongPress()
             startTimer()
+            initialCenter = self.center
+            print("initial center\(initialCenter)")
+
+        case .changed:
+            guard let originalCenter = initialCenter else {
+                return
+            }
+
+            guard let view = gesture.view else {
+                return
+            }
+
+            let point = gesture.location(in: view.superview)
+            // Calculate new center position
+            var newCenter = view.center;
+            // Update view center
+            self.center.y = point.y
+            delegate?.didChangeLocation(y: point.y)
         case .cancelled, .ended, .failed:
+            UIView.animate(withDuration: 0.5) {
+                self.center = self.initialCenter!
+            }
             invalidateTimer()
             delegate?.buttonDidEndLongPress()
         default:
