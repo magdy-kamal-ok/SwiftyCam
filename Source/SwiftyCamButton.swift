@@ -60,6 +60,8 @@ open class SwiftyCamButton: UIButton {
     
     public var buttonEnabled = true
     
+    public var buttonPressed = false
+    
     /// Maximum duration variable
     
     fileprivate var timer : Timer?
@@ -86,16 +88,23 @@ open class SwiftyCamButton: UIButton {
         guard buttonEnabled == true else {
             return
         }
-        
-       delegate?.buttonWasTapped()
+        if !buttonPressed {
+            buttonPressed = true
+            delegate?.buttonDidBeginLongPress()
+            startTimer()
+        } else {
+            invalidateTimer()
+            buttonPressed = false
+            delegate?.buttonDidEndLongPress()
+        }
+//       delegate?.buttonWasTapped()
     }
     
     /// UILongPressGestureRecognizer Function
     @objc fileprivate func LongPress(_ gesture:UILongPressGestureRecognizer!)  {
-        guard buttonEnabled == true else {
+        guard buttonEnabled == true && !buttonPressed else {
             return
         }
-        
         switch gesture.state {
         case .began:
             delegate?.buttonDidBeginLongPress()
@@ -133,7 +142,10 @@ open class SwiftyCamButton: UIButton {
     
     @objc fileprivate func timerFinished() {
         invalidateTimer()
-        delegate?.longPressDidReachMaximumDuration()
+        buttonPressed = false
+        delegate?.buttonDidEndLongPress()
+//        invalidateTimer()
+//        delegate?.longPressDidReachMaximumDuration()
     }
     
     /// Start Maximum Duration Timer
